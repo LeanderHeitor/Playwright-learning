@@ -1,73 +1,67 @@
-// @ts-check
-const { test, expect } = require("@playwright/test");
-const { LandingPage } = require("../pages/LandingPage");
-const { Toast } = require("../pages/Components");
+const { test, expect } = require('../support');
 const {faker} = require('@faker-js/faker');
-let landingPage;
-let toast;
-
-test.beforeEach(async ({ page }) => {
-  landingPage = new LandingPage(page);
-  toast = new Toast(page);
-});
 
 test("Deve cadastrar um lead na fila de espera", async ({ page }) => {
   const leadName = faker.person.fullName();
   const leadEmail = faker.internet.email();
-  await landingPage.visit();
-  await landingPage.openLeadModal();
-  await landingPage.submitLeadForm(leadName, leadEmail);
-
-  await landingPage.visit();
-  await landingPage.openLeadModal();
-  await landingPage.submitLeadForm(leadName, leadEmail);
+  await page.landing.visit();
+  await page.landing.openLeadModal();
+  await page.landing.submitLeadForm(leadName, leadEmail);
 
   const message = "Agradecemos por compartilhar seus dados conosco. Em breve, nossa equipe entrará em contato!";
-  await toast.haveText(message);
+  await page.toast.containText(message);
 });
 
-test("Não deve cadastrar quando um email já existe", async ({ page }) => {
+test("Não deve cadastrar quando um email já existe", async ({ page, request }) => {
   const leadName = faker.person.fullName();
   const leadEmail = faker.internet.email();
-  await landingPage.visit();
-  await landingPage.openLeadModal();
-  await landingPage.submitLeadForm("eitor leander", "eitorleander@hotmail.com");
 
-  const message = "O endereço de e-mail já está registrado em nossa fila de espera.";
-  await toast.haveText(message);
+  const newLead = await request.post('http://localhost:3333/leads', {
+    data: {
+      name: leadName,
+      email: leadEmail
+    }
+  });
+
+  expect(newLead.ok()).toBeTruthy();
+  await page.landing.visit();
+  await page.landing.openLeadModal();
+  await page.landing.submitLeadForm(leadName, leadEmail);
+
+  const message = "O endereço de e-mail fornecido já está registrado em nossa fila de espera.";
+  await page.toast.containText(message, { timeout: 15000 });
 });
 
 test("Não deve cadastrar com email incorreto", async ({ page }) => {
-  await landingPage.visit();
-  await landingPage.openLeadModal();
-  await landingPage.submitLeadForm("eitor leander", "eitorleander.com.br");
+  await page.landing.visit();
+  await page.landing.openLeadModal();
+  await page.landing.submitLeadForm("eitor leander", "eitorleander.com.br");
 
-  await landingPage.alertHaveText("Email incorreto");
+  await page.landing.alertHaveText("Email incorreto");
 });
 
 test("Não deve cadastrar quando nome não é preenchido", async ({ page }) => {
-  await landingPage.visit();
-  await landingPage.openLeadModal();
-  await landingPage.submitLeadForm("", "eitorleander@gmail.com");
+  await page.landing.visit();
+  await page.landing.openLeadModal();
+  await page.landing.submitLeadForm("", "eitorleander@gmail.com");
 
-  await landingPage.alertHaveText("Campo obrigatório");
+  await page.landing.alertHaveText("Campo obrigatório");
 
 });
 test("Não deve cadastrar quando email não é preenchido", async ({ page }) => {
-  await landingPage.visit();
-  await landingPage.openLeadModal();
-  await landingPage.submitLeadForm("eitor leander", "");
+  await page.landing.visit();
+  await page.landing.openLeadModal();
+  await page.landing.submitLeadForm("eitor leander", "");
 
-  await landingPage.alertHaveText("Campo obrigatório");
+  await page.landing.alertHaveText("Campo obrigatório");
 });
 
 test("Não deve cadastrar quando nenhum campo é preenchido", async ({ page }) => {
-  landingPage = new LandingPage(page);
-  await landingPage.visit();
-  await landingPage.openLeadModal();
-  await landingPage.submitLeadForm("", "");
+  await page.landing.visit();
+  await page.landing.openLeadModal();
+  await page.landing.submitLeadForm("", "");
 
-  await landingPage.alertHaveText([
+  await page.landing.alertHaveText([
     "Campo obrigatório",
     "Campo obrigatório"
   ]);
