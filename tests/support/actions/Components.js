@@ -1,4 +1,4 @@
-const { expect } = require('../support');
+const { expect } = require('../../support');
 export class Toast  {
     constructor(page) {
         this.page = page;
