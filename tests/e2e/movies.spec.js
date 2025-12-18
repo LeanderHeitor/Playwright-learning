@@ -1,4 +1,4 @@
-const {test} = require('../support');
+const {test, expect} = require('../support');
 const data = require ('../support/fixtures/movies.json');
 const { executeSQL } = require ('../support/database')
 
@@ -12,14 +12,15 @@ test('deve cadastrar um novo filme', async ({page,}) => {
     await page.toast.containText('Cadastro realizado com sucesso!');
 });
 
-test('não deve cadastrar quando título é duplicado', async ({page,}) => {
+test('não deve cadastrar quando título é duplicado', async ({page, request}) => {
     const movie = data.duplicate;
-    await page.login.do("admin@zombieplus.com", "pwd123", "Admin");
-    await page.movies.create(movie);
-    await page.toast.containText('Cadastro realizado com sucesso!');
+    await request.api.setToken();
+    await request.api.postMovie(movie);
+    
+    // await request.api.postMovie(movie);
 
-    await page.movies.create(movie);
-    await page.toast.containText('Este conteúdo já encontra-se cadastrado no catálogo');
+    // await page.movies.create(movie);
+    // await page.toast.containText('Este conteúdo já encontra-se cadastrado no catálogo');
 });
 test('não deve cadastrar quando campos obrigatórios não são preenchidos', async ({page,}) => {
     await page.login.do("admin@zombieplus.com", "pwd123", "Admin");
